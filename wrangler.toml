@@ -1,0 +1,13 @@
+name = "admin-dashboard"
+type = "javascript"
+account_id = "732e7b6d5dd17779e5b2368491e6a05f"
+workers_dev = false
+compatibility_date = "2024-03-13"
+
+[site]
+bucket = "./dist" # Ensure Vue app is served properly
+
+[[d1_databases]]
+binding = "DB"
+database_name = "roam_sass"
+database_id = "7f3a0524-e9b9-44c8-998d-497c1e605eee"
