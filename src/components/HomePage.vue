@@ -1,18 +1,15 @@
 <!-- Main App.vue -->
 <script setup>
-import { ref } from "vue";
-import DnsHeader from "./components/DnsHeader.vue";
-import DnsTable from "./components/DnsTable.vue";
-import AdminPanel from "./components/AdminPanel.vue";
-import Notification from "./components/Notification.vue";
+import { ref, computed } from "vue";
+import DnsHeader from "./DnsHeader.vue";
+import DnsTable from "./DnsTable.vue";
+import Notification from "./Notification.vue";
 
 const records = ref([]);
 const token = ref("");
 const verificationStatus = ref({});
 const loading = ref(false);
 const showNotification = ref(false);
-
-const isAdmin = ref(false);
 
 const fetchRecords = async () => {
   loading.value = true;
@@ -41,28 +38,6 @@ const verifyRecords = async () => {
   }
 };
 
-const addRecord = async (recordData) => {
-  await fetch("/api/dns", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(recordData),
-  });
-  await fetchRecords();
-};
-
-const generateClientToken = async (clientName) => {
-  if (clientName.trim()) {
-    const res = await fetch("/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientName }),
-    });
-    const data = await res.json();
-    return data.token || "Error generating token";
-  }
-  return "";
-};
-
 const showCopyNotification = () => {
   showNotification.value = true;
   setTimeout(() => {
@@ -70,16 +45,10 @@ const showCopyNotification = () => {
   }, 2000);
 };
 
-// Check if user is admin based on URL parameter
-const checkAdminStatus = () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  isAdmin.value = urlParams.get("roam-admin") === "1";
-  token.value = urlParams.get("token") || "";
-};
-
 // Initialize app data
 const initApp = () => {
-  checkAdminStatus();
+  const urlParams = new URLSearchParams(window.location.search);
+  token.value = urlParams.get("token") || "";
   fetchRecords();
 };
 
@@ -91,7 +60,6 @@ initApp();
   <div class="min-h-screen flex flex-col items-center bg-gray-100 p-6">
     <div class="bg-white p-6 rounded-xl shadow-lg">
       <div class="px-4 sm:px-6 lg:px-8">
-        <!-- Header Component -->
         <DnsHeader />
 
         <button
@@ -104,17 +72,9 @@ initApp();
 
         <!-- DNS Records Table Component -->
         <DnsTable
-          v-if="!isAdmin"
           :records="records"
           :verification-status="verificationStatus"
           @copy-success="showCopyNotification"
-        />
-
-        <!-- Admin Panel Component -->
-        <AdminPanel
-          v-if="isAdmin"
-          @record-added="addRecord"
-          @token-generated="generateClientToken"
         />
       </div>
     </div>

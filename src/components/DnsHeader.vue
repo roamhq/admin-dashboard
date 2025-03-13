@@ -1,9 +1,10 @@
+<script setup>
+    import LogoHeader from "./LogoHeader.vue";
+</script>
+
 <template>
   <div>
-    <!-- Logo -->
-    <div class="flex justify-center mb-4">
-      <img src="@/assets/logo.svg" alt="Logo" class="h-12 w-auto">
-    </div>
+    <LogoHeader />
 
     <div class="sm:flex sm:items-center">
       <div class="sm:flex-auto">
