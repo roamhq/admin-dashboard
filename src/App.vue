@@ -14,7 +14,13 @@ const fetchRecords = async () => {
     loading.value = true;
     const query = token.value ? `?token=${encodeURIComponent(token.value)}` : "";
     const res = await fetch(`/api/dns${query}`);
-    records.value = await res.json();
+
+    if (!res.ok) {
+        records.value = [];
+    } else {
+        records.value = await res.json();
+    }
+
     await verifyRecords();
     loading.value = false;
 };
