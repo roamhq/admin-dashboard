@@ -11,6 +11,8 @@ const authError = ref("");
 
 const authenticate = async () => {
   try {
+    authenticated.value = true;
+
     const response = await fetch("/api/admin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -33,3 +33,8 @@ pnpm build
 ```sh
 pnpm lint
 ```
+
+## Log errors
+```sh
+npx wrangler pages deployment tail
+```
