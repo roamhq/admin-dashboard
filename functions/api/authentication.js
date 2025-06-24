@@ -1,9 +1,24 @@
 export async function onRequest({ request, env }) {
+    if (request.method === 'OPTIONS') {
+        return new Response(null, {
+            status: 204,
+            headers: {
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type'
+            }
+        });
+    }
+
     if (request.method === "GET") {
         const { results } = await env.DB.prepare("SELECT * FROM authentication").all();
 
         return new Response(JSON.stringify(results), {
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Allow-Origin': '*',
+              },
         });
     }
 
@@ -13,7 +28,10 @@ export async function onRequest({ request, env }) {
         if (!Array.isArray(data)) {
             return new Response("Invalid data format. Expected array.", {
                 status: 400,
-                headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "application/json",
+                    'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Allow-Origin': '*',
+                  },
             });
         }
 
@@ -37,15 +55,21 @@ export async function onRequest({ request, env }) {
             }
 
             return new Response(JSON.stringify({ success: true, message: "Authentication data updated successfully" }), {
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                    'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Allow-Origin': '*',
+                  },
             });
 
         } catch (error) {
-            console.log(error);
+            console.error(error);
 
             return new Response("There was an error updating the authentication data.", {
                 status: 500,
-                headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "application/json",
+                    'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Allow-Origin': '*',
+                  },
             });
         }
     }

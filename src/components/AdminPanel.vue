@@ -1,271 +1,664 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted } from 'vue'
+import { API_CONFIG } from '@/config/api'
 
-const newRecord = ref({ client: "", type: "", host: "", data: "" });
-const clientName = ref("");
-const generatedToken = ref("");
-const authenticationData = ref([]);
-const isLoading = ref(false);
+const newRecord = ref({ client: '', type: '', host: '', data: '' })
+const clientName = ref('')
+const generatedToken = ref('')
+const authenticationData = ref([])
+const isLoading = ref(false)
+const isAddingRecord = ref(false)
+const isGeneratingToken = ref(false)
+const isSavingAuth = ref(false)
 
 const addRecord = async () => {
-  if (newRecord.value.client && newRecord.value.type && newRecord.value.host && newRecord.value.data) {
-    await fetch("/api/dns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+  if (
+    !newRecord.value.client ||
+    !newRecord.value.type ||
+    !newRecord.value.host ||
+    !newRecord.value.data
+  ) {
+    return
+  }
+
+  isAddingRecord.value = true
+
+  try {
+    await fetch(API_CONFIG.buildUrl('/api/dns'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRecord.value),
-    });
+    })
 
     // Reset form
-    newRecord.value = { client: "", type: "", host: "", data: "" };
+    newRecord.value = { client: '', type: '', host: '', data: '' }
+  } catch (error) {
+    console.error('Error adding DNS record:', error)
+  } finally {
+    isAddingRecord.value = false
   }
-};
+}
 
 const generateClientToken = async () => {
-  if (clientName.value.trim()) {
-    const res = await fetch("/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientName: clientName.value })
-    });
-
-    const data = await res.json();
-
-    generatedToken.value = data.token || "sss";
+  if (!clientName.value.trim()) {
+    return
   }
-};
+
+  isGeneratingToken.value = true
+
+  try {
+    const res = await fetch(API_CONFIG.buildUrl('/api/token'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientName: clientName.value }),
+    })
+
+    const data = await res.json()
+    generatedToken.value = data.token || ''
+  } catch (error) {
+    console.error('Error generating token:', error)
+  } finally {
+    isGeneratingToken.value = false
+  }
+}
 
 const fetchAuthenticationData = async () => {
-  isLoading.value = true;
+  isLoading.value = true
 
   try {
-    const res = await fetch("/api/authentication");
-    const data = await res.json();
+    const res = await fetch(API_CONFIG.buildUrl('/api/authentication'))
+    const data = await res.json()
 
-    authenticationData.value = (data || []).map(entry => ({
+    authenticationData.value = (data || []).map((entry) => ({
       ...entry,
-      enabled: Boolean(entry.enabled)
-    }));
+      enabled: Boolean(entry.enabled),
+    }))
   } catch (error) {
-    authenticationData.value = [];
+    console.error(error);
+    authenticationData.value = []
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 const saveAuthenticationData = async () => {
+  isSavingAuth.value = true
+
   try {
-    await fetch("/api/authentication", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    await fetch(API_CONFIG.buildUrl('/api/authentication'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(authenticationData.value),
-    });
+    })
   } catch (error) {
-    console.error("Error saving authentication data:", error);
+    console.error('Error saving authentication data:', error)
+  } finally {
+    isSavingAuth.value = false
   }
-};
+}
 
 const addNewAuthEntry = () => {
   authenticationData.value.push({
-    hostname: "",
-    uri: "",
-    username: "",
-    password: "",
-    theme: "",
-    enabled: 1
-  });
-};
+    hostname: '',
+    uri: '',
+    username: '',
+    password: '',
+    theme: '',
+    enabled: 1,
+  })
+}
 
 const removeAuthEntry = (index) => {
-  authenticationData.value.splice(index, 1);
-};
+  authenticationData.value.splice(index, 1)
+}
+
+const handleKeyPress = (event, action) => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    if (action === 'addRecord') {
+      addRecord()
+    } else if (action === 'generateToken') {
+      generateClientToken()
+    }
+  }
+}
 
 onMounted(() => {
-  fetchAuthenticationData();
-});
-
+  fetchAuthenticationData()
+})
 </script>
 
 <template>
-    <div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
-      <div class="px-4 sm:px-0">
-        <h2 class="text-base/7 font-semibold text-gray-900">DNS Record</h2>
-        <p class="mt-1 text-sm/6 text-gray-600">Create new DNS records</p>
-      </div>
-
-      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-        <div class="px-4 py-6 sm:p-8">
-          <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-8">
-            <div class="sm:col-span-2">
-              <label for="client" class="block text-sm/6 font-medium text-gray-900">Client</label>
-              <div class="mt-2">
-                <input v-model="newRecord.client" placeholder="roamhq" type="text" name="client" id="client" autocomplete="given-name" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
-              </div>
-            </div>
-
-            <div class="sm:col-span-2">
-              <label for="type" class="block text-sm/6 font-medium text-gray-900">Type (CNAME, TXT)</label>
-              <div class="mt-2">
-                <input v-model="newRecord.type" type="text" name="type" id="type" autocomplete="given-name" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
-              </div>
-            </div>
-
-            <div class="sm:col-span-2">
-              <label for="host" class="block text-sm/6 font-medium text-gray-900">Host</label>
-              <div class="mt-2">
-                <input v-model="newRecord.host" type="text" name="host" id="host" autocomplete="given-name" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
-              </div>
-            </div>
-
-            <div class="sm:col-span-2">
-              <label for="data" class="block text-sm/6 font-medium text-gray-900">Data</label>
-              <div class="mt-2">
-                <input v-model="newRecord.data" type="text" name="data" id="data" autocomplete="given-name" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
-              </div>
-            </div>
+  <div class="space-y-8">
+    <!-- DNS Record Section -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div class="px-6 py-6 sm:px-8">
+        <div class="flex items-center mb-6">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-6 w-6 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h2 class="text-lg font-semibold text-gray-900">DNS Record</h2>
+            <p class="text-sm text-gray-600">Create new DNS records for client domains</p>
+          </div>
         </div>
-        </div>
-        <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 px-4 py-4 sm:px-8">
-          <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" @click="addRecord">Add</button>
-        </div>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
-      <div class="px-4 sm:px-0">
-        <h2 class="text-base/7 font-semibold text-gray-900">Generate Client Token</h2>
-        <p class="mt-1 text-sm/6 text-gray-600">Token used to provide a unique URL to access DNS records</p>
-      </div>
-
-      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-        <div class="px-4 py-6 sm:p-8">
-          <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-4">
-            <div class="sm:col-span-2">
-              <label for="clientName" class="block text-sm/6 font-medium text-gray-900">Client</label>
-              <div class="mt-2">
-                <input v-model="clientName" placeholder="roamhq" type="text" name="client" id="clientName" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label for="client" class="block text-sm font-medium text-gray-700 mb-2">Client</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
               </div>
+              <input
+                v-model="newRecord.client"
+                @keypress="(e) => handleKeyPress(e, 'addRecord')"
+                placeholder="roamhq"
+                type="text"
+                name="client"
+                id="client"
+                :disabled="isAddingRecord"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
             </div>
-            <div v-if="generatedToken" class="sm:col-span-2">
-              <label for="token" class="block text-sm/6 font-medium text-gray-900">Token</label>
-              <div class="mt-2">
-                <input  placeholder="roamhq" type="text" v-model="generatedToken" name="client" id="token" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+          </div>
+
+          <div>
+            <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
               </div>
+              <input
+                v-model="newRecord.type"
+                @keypress="(e) => handleKeyPress(e, 'addRecord')"
+                placeholder="CNAME, TXT"
+                type="text"
+                name="type"
+                id="type"
+                :disabled="isAddingRecord"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="host" class="block text-sm font-medium text-gray-700 mb-2">Host</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
+                  />
+                </svg>
+              </div>
+              <input
+                v-model="newRecord.host"
+                @keypress="(e) => handleKeyPress(e, 'addRecord')"
+                placeholder="subdomain.example.com"
+                type="text"
+                name="host"
+                id="host"
+                :disabled="isAddingRecord"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="data" class="block text-sm font-medium text-gray-700 mb-2">Data</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <input
+                v-model="newRecord.data"
+                @keypress="(e) => handleKeyPress(e, 'addRecord')"
+                placeholder="target.example.com"
+                type="text"
+                name="data"
+                id="data"
+                :disabled="isAddingRecord"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
             </div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 px-4 py-4 sm:px-8">
-          <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" @click="generateClientToken">Generate</button>
-        </div>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 gap-x-8 gap-y-8 py-10 md:grid-cols-3">
-      <div class="px-4 sm:px-0">
-        <h2 class="text-base/7 font-semibold text-gray-900">Authentication</h2>
-        <p class="mt-1 text-sm/6 text-gray-600">Manage authentication credentials for different hostnames</p>
-      </div>
-
-      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-        <div class="px-4 py-6 sm:p-8">
-          <div v-if="isLoading" class="text-center py-4">
-            <p class="text-sm text-gray-600">Loading authentication data...</p>
-          </div>
-          
-          <div v-else>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-300">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Hostname</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">URI</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Username</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Password</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Theme</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Enabled</th>
-                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                      <span class="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr v-for="(entry, index) in authenticationData" :key="index">
-                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-0">
-                      <input 
-                        v-model="entry.hostname" 
-                        type="text" 
-                        class="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                        placeholder="roam.client.com.au"
-                      />
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm">
-                      <input 
-                        v-model="entry.uri" 
-                        type="text" 
-                        class="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                      />
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm">
-                      <input 
-                        v-model="entry.username" 
-                        type="text" 
-                        class="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                        placeholder="username"
-                      />
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm">
-                      <input 
-                        v-model="entry.password" 
-                        type="password" 
-                        class="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                        placeholder="password"
-                      />
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm">
-                      <input 
-                        v-model="entry.theme"
-                        type="text"
-                        class="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                        placeholder="roam"
-                      />
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm">
-                      <input 
-                        v-model="entry.enabled"
-                        type="checkbox" 
-                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                      />
-                    </td>
-                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                      <button 
-                        @click="removeAuthEntry(index)"
-                        class="text-red-600 hover:text-red-900"
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="mt-4">
-              <button 
-                @click="addNewAuthEntry"
-                class="rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-              >
-                Add New Entry
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center justify-end gap-x-6 border-t border-gray-900/10 px-4 py-4 sm:px-8">
-          <button 
-            class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" 
-            @click="saveAuthenticationData"
+        <div class="mt-6 flex justify-end">
+          <button
+            @click="addRecord"
+            :disabled="
+              isAddingRecord ||
+              !newRecord.client ||
+              !newRecord.type ||
+              !newRecord.host ||
+              !newRecord.data
+            "
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
           >
-            Save Changes
+            <svg
+              v-if="isAddingRecord"
+              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isAddingRecord ? 'Adding...' : 'Add Record' }}
           </button>
         </div>
       </div>
     </div>
+
+    <!-- Generate Client Token Section -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div class="px-6 py-6 sm:px-8">
+        <div class="flex items-center mb-6">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-6 w-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h2 class="text-lg font-semibold text-gray-900">Generate Client Token</h2>
+            <p class="text-sm text-gray-600">
+              Create unique access tokens for client DNS management
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="clientName" class="block text-sm font-medium text-gray-700 mb-2"
+              >Client Name</label
+            >
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <input
+                v-model="clientName"
+                @keypress="(e) => handleKeyPress(e, 'generateToken')"
+                placeholder="roamhq"
+                type="text"
+                name="clientName"
+                id="clientName"
+                :disabled="isGeneratingToken"
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div v-if="generatedToken">
+            <label for="token" class="block text-sm font-medium text-gray-700 mb-2"
+              >Generated Token</label
+            >
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                  />
+                </svg>
+              </div>
+              <input
+                v-model="generatedToken"
+                type="text"
+                name="token"
+                id="token"
+                readonly
+                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 cursor-not-allowed"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button
+            @click="generateClientToken"
+            :disabled="isGeneratingToken || !clientName.trim()"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+          >
+            <svg
+              v-if="isGeneratingToken"
+              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isGeneratingToken ? 'Generating...' : 'Generate Token' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication Section -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div class="px-6 py-6 sm:px-8">
+        <div class="flex items-center mb-6">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-6 w-6 text-purple-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h2 class="text-lg font-semibold text-gray-900">Authentication</h2>
+            <p class="text-sm text-gray-600">
+              Manage authentication credentials for different hostnames
+            </p>
+          </div>
+        </div>
+
+        <div v-if="isLoading" class="text-center py-8">
+          <svg
+            class="animate-spin h-8 w-8 text-gray-400 mx-auto mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p class="text-sm text-gray-600">Loading authentication data...</p>
+        </div>
+
+        <div v-else>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Hostname
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    URI
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Username
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Password
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Theme
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Enabled
+                  </th>
+                  <th scope="col" class="relative px-3 py-3">
+                    <span class="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr
+                  v-for="(entry, index) in authenticationData"
+                  :key="index"
+                  class="hover:bg-gray-50"
+                >
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.hostname"
+                      type="text"
+                      placeholder="roam.client.com.au"
+                      class="block w-full px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-purple-500 focus:ring-opacity-50 text-sm transition-colors"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.uri"
+                      type="text"
+                      placeholder="/page-uri"
+                      class="block w-full px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-purple-500 focus:ring-opacity-50 text-sm transition-colors"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.username"
+                      type="text"
+                      placeholder="username"
+                      class="block w-full px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-purple-500 focus:ring-opacity-50 text-sm transition-colors"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.password"
+                      type="password"
+                      placeholder="password"
+                      class="block w-full px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-purple-500 focus:ring-opacity-50 text-sm transition-colors"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.theme"
+                      type="text"
+                      placeholder="roam"
+                      class="block w-full px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-purple-500 focus:ring-opacity-50 text-sm transition-colors"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <input
+                      v-model="entry.enabled"
+                      type="checkbox"
+                      class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      @click="removeAuthEntry(index)"
+                      class="text-red-600 hover:text-red-900 transition-colors"
+                    >
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-6 flex justify-between items-center">
+            <button
+              @click="addNewAuthEntry"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+            >
+              <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add New Entry
+            </button>
+
+            <button
+              @click="saveAuthenticationData"
+              :disabled="isSavingAuth"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            >
+              <svg
+                v-if="isSavingAuth"
+                class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              {{ isSavingAuth ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

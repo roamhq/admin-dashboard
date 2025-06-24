@@ -1,74 +1,124 @@
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { defineProps, defineEmits } from 'vue'
 
-const props = defineProps({
+defineProps({
   records: Array,
-  verificationStatus: Object
-});
+  verificationStatus: Object,
+})
 
-const emit = defineEmits(["copySuccess"]);
+const emit = defineEmits(['copySuccess'])
 
 const copyToClipboard = async (text, event) => {
   try {
-    await navigator.clipboard.writeText(text);
-    
+    await navigator.clipboard.writeText(text)
+
     // Emit event to parent for notification
-    emit("copySuccess");
+    emit('copySuccess')
 
     // Button animation
-    const button = event.target;
-    button.classList.add("scale-90");
-    setTimeout(() => button.classList.remove("scale-90"), 150);
+    const button = event.target
+    button.classList.add('scale-90')
+    setTimeout(() => button.classList.remove('scale-90'), 150)
   } catch (error) {
-    console.error("Failed to copy:", error);
+    console.error('Failed to copy:', error)
   }
-};
+}
 </script>
 
 <template>
-  <div class="mt-8 flow-root">
-    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-      <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-        <table class="min-w-full divide-y divide-gray-300">
-          <thead>
+  <div>
+    <div class="flex items-center mb-6">
+      <div class="flex-shrink-0">
+        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h2 class="text-lg font-semibold text-gray-900">DNS Records</h2>
+        <p class="text-sm text-gray-600">
+          Add these records to your DNS host to connect your domain with Roam.
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div class="px-4 py-6 sm:px-6 lg:px-8">
+        <table class="mt-6 w-full whitespace-nowrap text-left">
+          <colgroup>
+            <col class="w-2/12" />
+            <col class="w-3/12" />
+            <col class="w-4/12" />
+            <col class="w-1/12" />
+            <col class="w-2/12" />
+          </colgroup>
+          <thead class="border-b border-gray-200 text-sm/6 text-gray-500">
             <tr>
-              <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:pl-0">
-                Type
-              </th>
-              <th scope="col" class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                Host
-              </th>
-              <th scope="col" class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                Data
-              </th>
-              <th scope="col" class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                Status
-              </th>
-              <th scope="col" class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-              </th>
+              <th scope="col" class="py-3 pl-0 pr-8 font-semibold">Type</th>
+              <th scope="col" class="py-3 pl-0 pr-8 font-semibold">Host</th>
+              <th scope="col" class="py-3 pl-0 pr-8 font-semibold">Data</th>
+              <th scope="col" class="py-3 pl-0 pr-8 font-semibold">Status</th>
+              <th scope="col" class="py-3 pl-0 pr-0 font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr v-for="record in records" :key="record.id">
-              <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                {{ record.type }}
+          <tbody class="divide-y divide-gray-100">
+            <tr
+              v-for="record in records"
+              :key="record.id"
+              class="hover:bg-gray-50 transition-colors"
+            >
+              <td class="py-4 pl-0 pr-8">
+                <div class="flex items-center">
+                  <div
+                    class="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                  >
+                    {{ record.type }}
+                  </div>
+                </div>
               </td>
-              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                {{ record.host }}
+              <td class="py-4 pl-0 pr-8">
+                <div class="truncate text-sm/6 font-medium text-gray-900">{{ record.host }}</div>
               </td>
-              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                {{ record.data }}
+              <td class="py-4 pl-0 pr-8">
+                <div class="flex items-center gap-x-3">
+                  <div class="font-mono text-sm/6 text-gray-600 truncate max-w-xs">
+                    {{ record.data }}
+                  </div>
+                </div>
               </td>
-              <td class="px-3 py-4 text-sm">
-                <span v-if="verificationStatus[record.host]" class="text-green-500">✅</span>
-                <span v-else class="text-red-500">❌</span>
+              <td class="py-4 pl-0 pr-8">
+                <div class="flex items-center gap-x-2">
+                  <div
+                    v-if="verificationStatus[record.host]"
+                    class="flex-none rounded-full bg-green-400/10 p-1 text-green-400"
+                  >
+                    <div class="size-1.5 rounded-full bg-current"></div>
+                  </div>
+                  <div v-else class="flex-none rounded-full bg-red-400/10 p-1 text-red-400">
+                    <div class="size-1.5 rounded-full bg-current"></div>
+                  </div>
+                  <div class="hidden text-sm/6 text-gray-900 sm:block">
+                    {{ verificationStatus[record.host] ? 'Verified' : 'Pending' }}
+                  </div>
+                </div>
               </td>
-              <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+              <td class="py-4 pl-0 pr-0">
                 <button
-                  class="bg-red-400 text-white px-3 py-1 rounded transition-transform duration-150 active:scale-90"
+                  class="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150 shadow-sm active:scale-95"
                   @click="copyToClipboard(record.data, $event)"
                 >
-                  Copy
+                  <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16h8M8 12h8m-6 8h6a2 2 0 002-2V6a2 2 0 00-2-2H8a2 2 0 00-2 2v2"
+                    />
+                  </svg>
                 </button>
               </td>
             </tr>

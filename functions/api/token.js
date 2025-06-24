@@ -1,21 +1,43 @@
-export async function onRequestPost({ request, env }) {
-    const { clientName, token } = await request.json();
-
-    if (clientName && !token) {
-        const generatedToken = await generateToken(clientName, env.DNS_SECRET_KEY);
-        return new Response(JSON.stringify({ token: generatedToken }), {
-            headers: { "Content-Type": "application/json" },
+export async function onRequest({ request, env }) {
+    if (request.method === 'OPTIONS') {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          }
         });
     }
 
-    if (!clientName && token) {
-        const clientName = await decryptToken(token, env.DNS_SECRET_KEY);
-        return new Response(JSON.stringify({ clientName }), {
-            headers: { "Content-Type": "application/json" },
-        });
-    }
+    if (request.method === 'POST') {
+        const { clientName, token } = await request.json();
 
-    return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400 });
+        if (clientName && !token) {
+            const generatedToken = await generateToken(clientName, env.DNS_SECRET_KEY);
+
+            return new Response(JSON.stringify({ token: generatedToken }), {
+                headers: { "Content-Type": "application/json",
+                    'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Allow-Origin': '*',
+                  },
+            });
+        }
+
+        if (!clientName && token) {
+            const clientName = await decryptToken(token, env.DNS_SECRET_KEY);
+
+            return new Response(JSON.stringify({ clientName }), {
+                headers: { "Content-Type": "application/json",
+                    'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Allow-Origin': '*',
+                  },
+            });
+        }
+
+        return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400 });
+    };
 }
 
 async function generateToken(clientName, secretKey) {
@@ -29,7 +51,9 @@ async function generateToken(clientName, secretKey) {
     const cryptoKey = await crypto.subtle.importKey("raw", keyData, algo, false, ["encrypt"]);
     const encrypted = await crypto.subtle.encrypt(algo, cryptoKey, encoder.encode(clientName));
 
-    return encodeBase64(new Uint8Array([...iv, ...new Uint8Array(encrypted)]));
+    const base64Result = encodeBase64(new Uint8Array([...iv, ...new Uint8Array(encrypted)]));
+
+    return base64Result.replace(/\+/g, '%2B');
 }
 
 export async function decryptToken(token, secretKey) {
@@ -48,6 +72,8 @@ export async function decryptToken(token, secretKey) {
         const decrypted = await crypto.subtle.decrypt(algo, cryptoKey, encryptedData);
         return new TextDecoder().decode(decrypted);
     } catch (error) {
+        console.error(error);
+
         return false;
     }
 }

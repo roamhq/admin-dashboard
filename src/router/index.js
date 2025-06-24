@@ -7,18 +7,18 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: HomePage
+    component: HomePage,
   },
   {
     path: '/admin',
     name: 'Admin',
-    component: AdminPage
-  }
+    component: AdminPage,
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 export default router

@@ -7,6 +7,16 @@ compatibility_date = "2024-03-13"
 [site]
 bucket = "./dist" # Ensure Vue app is served properly
 
+# Development configuration for hot reload
+[dev]
+port = 8788
+local_protocol = "http"
+
+# Proxy to Vite dev server for hot reload
+[[dev.proxy]]
+name = "vite-dev"
+url = "http://localhost:5173"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "roam_sass"
