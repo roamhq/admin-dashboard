@@ -12,7 +12,6 @@ const routes: RouteRecordRaw[] = [
     path: '/admin',
     name: 'Admin',
     component: () => import('@/components/AdminPage.vue'),
-    meta: { requiresAuth: true }
   },
 ]
 
@@ -24,11 +23,8 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
-  if (to.meta?.requiresAuth && !authStore.isAuthenticated) {
-    next('/admin')
-  } else {
-    next()
-  }
+  // Allow all routes - components handle their own authentication logic
+  next()
 })
 
 export default router 
