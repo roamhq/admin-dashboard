@@ -1,10 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { defineProps } from 'vue'
 
-defineProps({
-  show: Boolean,
-  message: String,
-})
+interface Props {
+  show: boolean
+  message: string
+}
+
+defineProps<Props>()
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 // API configuration utility
-const getApiBaseUrl = () => {
+const getApiBaseUrl = (): string => {
   console.log(import.meta.env.DEV)
   if (import.meta.env.DEV) {
     return 'http://localhost:8788'
@@ -13,7 +13,7 @@ export const API_CONFIG = {
   baseUrl: getApiBaseUrl(),
   
   // Helper function to build full API URLs
-  buildUrl: (endpoint) => {
+  buildUrl: (endpoint: string): string => {
     const base = getApiBaseUrl()
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
     return `${base}${cleanEndpoint}`

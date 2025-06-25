@@ -1,14 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
+import type { DnsRecord } from '@/types'
 
-defineProps({
-  records: Array,
-  verificationStatus: Object,
-})
+interface VerificationStatus {
+  [key: string]: boolean
+}
 
-const emit = defineEmits(['copySuccess'])
+interface Props {
+  records: DnsRecord[]
+  verificationStatus: VerificationStatus
+}
 
-const copyToClipboard = async (text, event) => {
+defineProps<Props>()
+
+const emit = defineEmits<{
+  copySuccess: []
+}>()
+
+const copyToClipboard = async (text: string, event: Event): Promise<void> => {
   try {
     await navigator.clipboard.writeText(text)
 
@@ -16,7 +25,7 @@ const copyToClipboard = async (text, event) => {
     emit('copySuccess')
 
     // Button animation
-    const button = event.target
+    const button = event.target as HTMLElement
     button.classList.add('scale-90')
     setTimeout(() => button.classList.remove('scale-90'), 150)
   } catch (error) {
@@ -68,7 +77,7 @@ const copyToClipboard = async (text, event) => {
           <tbody class="divide-y divide-gray-100">
             <tr
               v-for="record in records"
-              :key="record.id"
+              :key="record.host"
               class="hover:bg-gray-50 transition-colors"
             >
               <td class="py-4 pl-0 pr-8">

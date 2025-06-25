@@ -1,18 +1,23 @@
 <!-- Main App.vue -->
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import LogoHeader from './LogoHeader.vue'
 import DnsTable from './DnsTable.vue'
 import NotificationMessage from './NotificationMessage.vue'
 import { API_CONFIG } from '@/config/api'
+import type { DnsRecord } from '@/types'
 
-const records = ref([])
-const token = ref('')
-const verificationStatus = ref({})
-const loading = ref(false)
-const showNotification = ref(false)
+interface VerificationStatus {
+  [key: string]: boolean
+}
 
-const fetchRecords = async () => {
+const records = ref<DnsRecord[]>([])
+const token = ref<string>('')
+const verificationStatus = ref<VerificationStatus>({})
+const loading = ref<boolean>(false)
+const showNotification = ref<boolean>(false)
+
+const fetchRecords = async (): Promise<void> => {
   loading.value = true
   const query = token.value ? `?token=${encodeURIComponent(token.value)}` : ''
   const res = await fetch(API_CONFIG.buildUrl(`/api/dns${query}`))
@@ -27,19 +32,19 @@ const fetchRecords = async () => {
   loading.value = false
 }
 
-const verifyRecords = async () => {
+const verifyRecords = async (): Promise<void> => {
   for (const record of records.value) {
     const queryUrl = `https://cloudflare-dns.com/dns-query?name=${record.host}&type=${record.type}`
     const res = await fetch(queryUrl, {
       headers: { Accept: 'application/dns-json' },
     })
     const data = await res.json()
-    const matched = data.Answer?.some((ans) => ans.data === record.data)
+    const matched = data.Answer?.some((ans: any) => ans.data === record.data)
     verificationStatus.value[record.host] = matched
   }
 }
 
-const showCopyNotification = () => {
+const showCopyNotification = (): void => {
   showNotification.value = true
   setTimeout(() => {
     showNotification.value = false
@@ -47,7 +52,7 @@ const showCopyNotification = () => {
 }
 
 // Initialize app data
-const initApp = () => {
+const initApp = (): void => {
   const urlParams = new URLSearchParams(window.location.search)
   token.value = urlParams.get('token') || ''
   fetchRecords()

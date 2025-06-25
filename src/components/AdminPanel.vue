@@ -1,17 +1,18 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { API_CONFIG } from '@/config/api'
+import type { DnsRecord, AuthEntry, TokenResponse } from '@/types'
 
-const newRecord = ref({ client: '', type: '', host: '', data: '' })
-const clientName = ref('')
-const generatedToken = ref('')
-const authenticationData = ref([])
-const isLoading = ref(false)
-const isAddingRecord = ref(false)
-const isGeneratingToken = ref(false)
-const isSavingAuth = ref(false)
+const newRecord = ref<DnsRecord>({ client: '', type: '', host: '', data: '' })
+const clientName = ref<string>('')
+const generatedToken = ref<string>('')
+const authenticationData = ref<AuthEntry[]>([])
+const isLoading = ref<boolean>(false)
+const isAddingRecord = ref<boolean>(false)
+const isGeneratingToken = ref<boolean>(false)
+const isSavingAuth = ref<boolean>(false)
 
-const addRecord = async () => {
+const addRecord = async (): Promise<void> => {
   if (
     !newRecord.value.client ||
     !newRecord.value.type ||
@@ -39,7 +40,7 @@ const addRecord = async () => {
   }
 }
 
-const generateClientToken = async () => {
+const generateClientToken = async (): Promise<void> => {
   if (!clientName.value.trim()) {
     return
   }
@@ -53,7 +54,7 @@ const generateClientToken = async () => {
       body: JSON.stringify({ clientName: clientName.value }),
     })
 
-    const data = await res.json()
+    const data: TokenResponse = await res.json()
     generatedToken.value = data.token || ''
   } catch (error) {
     console.error('Error generating token:', error)
@@ -62,26 +63,26 @@ const generateClientToken = async () => {
   }
 }
 
-const fetchAuthenticationData = async () => {
+const fetchAuthenticationData = async (): Promise<void> => {
   isLoading.value = true
 
   try {
     const res = await fetch(API_CONFIG.buildUrl('/api/authentication'))
-    const data = await res.json()
+    const data: AuthEntry[] = await res.json()
 
     authenticationData.value = (data || []).map((entry) => ({
       ...entry,
       enabled: Boolean(entry.enabled),
     }))
   } catch (error) {
-    console.error(error);
+    console.error(error)
     authenticationData.value = []
   } finally {
     isLoading.value = false
   }
 }
 
-const saveAuthenticationData = async () => {
+const saveAuthenticationData = async (): Promise<void> => {
   isSavingAuth.value = true
 
   try {
@@ -97,22 +98,22 @@ const saveAuthenticationData = async () => {
   }
 }
 
-const addNewAuthEntry = () => {
+const addNewAuthEntry = (): void => {
   authenticationData.value.push({
     hostname: '',
     uri: '',
     username: '',
     password: '',
     theme: '',
-    enabled: 1,
+    enabled: true,
   })
 }
 
-const removeAuthEntry = (index) => {
+const removeAuthEntry = (index: number): void => {
   authenticationData.value.splice(index, 1)
 }
 
-const handleKeyPress = (event, action) => {
+const handleKeyPress = (event: KeyboardEvent, action: 'addRecord' | 'generateToken'): void => {
   if (event.key === 'Enter') {
     event.preventDefault()
     if (action === 'addRecord') {

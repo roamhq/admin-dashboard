@@ -10,6 +10,15 @@ export default defineConfig(({ mode }) => {
   return {
     build: {
       outDir: 'dist',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['vue', 'vue-router', 'pinia'],
+            ui: ['@vueuse/core']
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000
     },
 
     plugins: [

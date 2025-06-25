@@ -1,49 +1,54 @@
 <!-- views/AdminPage.vue -->
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import AdminPanel from '../components/AdminPanel.vue'
 import LogoHeader from '../components/LogoHeader.vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import { API_CONFIG } from '@/config/api'
+import type { LoginForm } from '@/types'
 
 const auth = useAuthStore()
-const username = ref('')
-const password = ref('')
-const authError = ref('')
-const isLoading = ref(false)
+const username = ref<string>('')
+const password = ref<string>('')
+const authError = ref<string>('')
+const isLoading = ref<boolean>(false)
 
-const authenticate = async () => {
+const authenticate = async (): Promise<void> => {
   if (isLoading.value) return
   isLoading.value = true
   authError.value = ''
 
   try {
+    const loginData: LoginForm = {
+      username: username.value,
+      password: password.value
+    }
+
     const response = await fetch(API_CONFIG.buildUrl('/api/admin'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, password: password.value }),
+      body: JSON.stringify(loginData),
     })
+    
     if (response.ok) {
-      auth.login()
+      await auth.login()
       authError.value = ''
     } else {
       authError.value = 'Invalid credentials'
     }
   } catch (error) {
-    console.error(error);
-
+    console.error(error)
     authError.value = 'Authentication failed'
   } finally {
     isLoading.value = false
   }
 }
 
-const handleKeyPress = (event) => {
+const handleKeyPress = (event: KeyboardEvent): void => {
   if (event.key === 'Enter') {
     authenticate()
   }
 }
-
 </script>
 
 <template>
