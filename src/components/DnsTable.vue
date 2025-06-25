@@ -94,7 +94,7 @@ const copyToClipboard = async (text: string, event: Event): Promise<void> => {
               </td>
               <td class="py-4 pl-0 pr-8">
                 <div class="flex items-center gap-x-3">
-                  <div class="font-mono text-sm/6 text-gray-600 mx-auto">
+                  <div class="font-mono text-sm/6 text-gray-600 max-w-lg">
                     {{ record.data }}
                   </div>
                 </div>
