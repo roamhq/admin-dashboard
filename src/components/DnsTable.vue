@@ -55,9 +55,9 @@ const copyToClipboard = async (text: string, event: Event): Promise<void> => {
       </div>
     </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div class="px-4 py-6 sm:px-6 lg:px-8">
-        <table class="mt-6 w-full whitespace-nowrap text-left">
+    <div class="bg-white rounded-lg overflow-hidden">
+      <div class="px-4 sm:px-6 lg:px-8">
+        <table class="w-full whitespace-nowrap text-left">
           <colgroup>
             <col class="w-2/12" />
             <col class="w-3/12" />
