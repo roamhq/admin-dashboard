@@ -12,3 +12,7 @@ local_protocol = "http"
 binding = "DB"
 database_name = "roam_sass"
 database_id = "7f3a0524-e9b9-44c8-998d-497c1e605eee"
+
+[[kv_namespaces]]
+binding = "KV_ROAM_AUTHENTICATION"
+id = "61ab552fb8f9433d9aa3f591a1e6f012"

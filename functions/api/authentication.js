@@ -12,7 +12,13 @@ export async function onRequest({ request, env }) {
     }
 
     if (request.method === "GET") {
-        const { results } = await env.DB.prepare("SELECT * FROM authentication").all();
+        const auths = await env.KV_ROAM_AUTHENTICATION.list();
+        const results = [];
+
+        for (const key of auths.keys) {
+          const value = await env.KV_ROAM_AUTHENTICATION.get(key.name);
+          results.push(JSON.parse(value));
+        }
 
         return new Response(JSON.stringify(results), {
             headers: { "Content-Type": "application/json",
@@ -35,22 +41,17 @@ export async function onRequest({ request, env }) {
             });
         }
 
-        try {
-            await env.DB.prepare("DELETE FROM authentication").run();
-            
+        try {            
             for (const entry of data) {
                 if (entry.hostname && entry.uri && entry.username && entry.password) {
-                    await env.DB.prepare(`
-                        INSERT INTO authentication (hostname, uri, username, password, theme, enabled) 
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `).bind(
-                        entry.hostname,
-                        entry.uri,
-                        entry.username,
-                        entry.password,
-                        entry.theme || "",
-                        entry.enabled || 0
-                    ).run();
+                    await env.KV_ROAM_AUTHENTICATION.put(entry.hostname + entry.uri, JSON.stringify({
+                        hostname: entry.hostname,
+                        uri: entry.uri,
+                        username: entry.username,
+                        password: entry.password,
+                        theme: entry.theme || "roam",
+                        enabled: entry.enabled || 0
+                      }));
                 }
             }
 
