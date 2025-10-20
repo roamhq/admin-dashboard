@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { API_CONFIG } from '@/config/api'
 import type { DnsRecord, AuthEntry, TokenResponse } from '@/types'
+import EcsTaskRunner from './EcsTaskRunner.vue'
 
 const newRecord = ref<DnsRecord>({ client: '', type: '', host: '', data: '' })
 const clientName = ref<string>('')
@@ -131,6 +132,9 @@ onMounted(() => {
 
 <template>
   <div class="space-y-8">
+    <!-- ECS Task Runner Section -->
+    <EcsTaskRunner />
+
     <!-- DNS Record Section -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <div class="px-6 py-6 sm:px-8">

@@ -65,4 +65,40 @@ export interface RouteMeta {
   requiresAuth?: boolean
   title?: string
   [key: string]: any
-} 
+}
+
+// ECS Task Types
+export interface EcsTask {
+  name: string
+  taskDefinition: string
+}
+
+export interface EcsClientGroup {
+  client: string
+  displayName: string
+  tasks: EcsTask[]
+  cluster: string
+  region: string
+  subnets: string[]
+  securityGroups: string[]
+  assignPublicIp: boolean
+}
+
+export interface EcsTaskResult {
+  success: boolean
+  taskDefinition: string
+  taskArn?: string
+  error?: string
+}
+
+export interface EcsTaskResponse {
+  success: boolean
+  partial?: boolean
+  results?: {
+    successful: EcsTaskResult[]
+    failed: EcsTaskResult[]
+  }
+  taskArn?: string // For backward compatibility
+  error?: string
+  message?: string
+}
