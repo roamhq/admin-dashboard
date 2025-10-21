@@ -149,7 +149,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+  <div class="overflow-hidden">
     <div class="px-6 py-6 sm:px-8">
       <div class="flex items-center mb-6">
         <div class="flex-shrink-0">
