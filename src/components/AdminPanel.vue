@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { API_CONFIG } from '@/config/api'
 import type { DnsRecord, AuthEntry, TokenResponse } from '@/types'
 import EcsTaskRunner from './EcsTaskRunner.vue'
+import ClientManager from './ClientManager.vue'
 
 const activeTab = ref<string>('ecs')
 const newRecord = ref<DnsRecord>({ client: '', type: '', host: '', data: '' })
@@ -197,6 +198,26 @@ onMounted(() => {
             />
           </svg>
           Tokens
+        </button>
+        <button
+          role="tab"
+          class="flex items-center px-6 py-4 text-sm font-medium transition-all duration-200 border-b-2 focus:outline-none"
+          :class="
+            activeTab === 'clients'
+              ? 'border-blue-600 text-blue-600 bg-white'
+              : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+          "
+          @click="activeTab = 'clients'"
+        >
+          <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
+          </svg>
+          Clients
         </button>
         <button
           role="tab"
@@ -537,6 +558,11 @@ onMounted(() => {
               {{ isGeneratingToken ? 'Generating...' : 'Generate Token' }}
             </button>
           </div>
+        </div>
+
+        <!-- Clients Tab -->
+        <div v-show="activeTab === 'clients'" class="flex-1">
+          <ClientManager />
         </div>
 
         <!-- Authentication Tab -->

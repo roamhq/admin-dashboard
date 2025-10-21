@@ -102,3 +102,19 @@ export interface EcsTaskResponse {
   error?: string
   message?: string
 }
+
+// Client Types
+export interface Client {
+  id?: number
+  name: string
+  origin: string
+  hostname: string
+  enabled: boolean
+}
+
+export interface ClientForm {
+  name: string
+  origin: string
+  hostname: string
+  enabled: boolean
+}
